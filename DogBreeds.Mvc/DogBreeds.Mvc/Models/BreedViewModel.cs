@@ -22,11 +22,12 @@ namespace DogBreeds.Mvc.Models
         public int Id { get; set; }
 
         [Display(Name = "Name")]
-        [Required(ErrorMessage = "{0} is required.")]
+        [Required(ErrorMessage = "You must enter a name for this Breed.")]
+        [StringLength(255, MinimumLength = 1, ErrorMessage = "You must enter a name for this Breed.")]
         public string Name { get; set; }
 
         public IEnumerable<Individual> Individuals { get; set; } = new List<Individual>();
 
-        public IEnumerable<Picture> Pictures { get; set; } = new List<Picture>();
+        public IList<string> Messages { get; set; } = new List<string>();
     }
 }

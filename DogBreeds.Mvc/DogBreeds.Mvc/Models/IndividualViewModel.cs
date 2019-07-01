@@ -31,17 +31,16 @@ namespace DogBreeds.Mvc.Models
 
         public int Id { get; set; }
 
-        [Display(Name = "Name")]
-        [Required(ErrorMessage = "{0} is required.")]
+        [Required(ErrorMessage = "You must enter a name for this Breed.")]
+        [StringLength(255, MinimumLength = 1, ErrorMessage = "You must enter a name for this Individual.")]
         public string Name { get; set; }
 
         [Display(Name = "Breed")]
-        [Required(ErrorMessage = "{0} is required.")]
+        [Required(ErrorMessage = "You must select a Breed for this Individual.")]
         public int BreedId { get; set; }
 
         public IEnumerable<Breed> Breeds { get; set; } = new List<Breed>();
 
-        [Display(Name = "Pictures")]
-        public IEnumerable<Picture> Pictures { get; set; } = new List<Picture>();
+        public IList<string> Messages { get; set; } = new List<string>();
     }
 }
