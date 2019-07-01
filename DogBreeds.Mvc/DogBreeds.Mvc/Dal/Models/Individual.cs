@@ -11,12 +11,25 @@ namespace DogBreeds.Mvc.Dal.Models
     {
         public Individual() { }
 
+        public Individual(string name, int breedId)
+        {
+            Name = name;
+            BreedId = breedId;
+        }
+
+        public Individual(int id, string name, int breedId)
+        {
+            Id = id;
+            Name = name;
+            BreedId = breedId;
+        }
+
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        [Required]
-        [MinLength(1, ErrorMessage = "You must enter a Name for this Individual")]
+        [Required(ErrorMessage = "You must enter a name for this Breed.")]
+        [StringLength(255, MinimumLength = 1, ErrorMessage = "You must enter a name for this Individual.")]
         public string Name { get; set; }
 
         [Required]
