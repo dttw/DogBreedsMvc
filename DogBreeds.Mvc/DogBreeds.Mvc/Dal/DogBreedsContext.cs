@@ -15,7 +15,5 @@ namespace DogBreeds.Mvc.Dal
         public DbSet<Breed> Breeds { get; set; }
 
         public DbSet<Individual> Individuals { get; set; }
-
-        public DbSet<Picture> Pictures { get; set; }
     }
 }
