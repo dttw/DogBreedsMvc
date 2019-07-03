@@ -41,8 +41,14 @@ namespace DogBreeds.Test
         {
             if (Context.Individuals.Count() == 0)
             {
-                Context.Individuals.Add(new Individual { Id = 1, Name = "Fido", BreedId = 2 });
-                Context.Individuals.Add(new Individual { Id = 2, Name = "Rex", BreedId = 8 });
+                IEnumerable<Individual> individuals = Enumerable.Range(1, 8).Select(i => new Individual ($"Test Individual {i}", i));
+
+                Context.Individuals.AddRange(individuals);
+
+                Context.SaveChanges();
+
+                Context.Individuals.Add(new Individual ("Fido", 2));
+                Context.Individuals.Add(new Individual ("Rex", 8));
 
                 Context.SaveChanges();
             }
