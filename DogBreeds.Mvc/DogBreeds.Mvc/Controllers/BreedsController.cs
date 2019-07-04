@@ -1,153 +1,227 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using DogBreeds.Mvc.Dal;
+using DogBreeds.Mvc.Dal.Models;
+using DogBreeds.Mvc.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using DogBreeds.Mvc.Dal;
-using DogBreeds.Mvc.Dal.Models;
 
 namespace DogBreeds.Mvc.Controllers
 {
     public class BreedsController : Controller
     {
-        private readonly DogBreedsContext _context;
+        private readonly DogBreedsContext context;
 
-        public BreedsController(DogBreedsContext context)
-        {
-            _context = context;
-        }
+        public BreedsController(DogBreedsContext context) => this.context = context;
 
-        // GET: Breeds
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Breeds.ToListAsync());
+            IIncludableQueryable<Breed, Breed> dogBreedsContext = context.Breeds.Include(i => i.ParentBreed);
+            return View(await dogBreedsContext.ToListAsync());
         }
 
-        // GET: Breeds/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+        public async Task<IActionResult> Details(int? id) => View(await GetBreed(id));
 
-            var breed = await _context.Breeds
-                .SingleOrDefaultAsync(m => m.Id == id);
-            if (breed == null)
-            {
-                return NotFound();
-            }
+        public IActionResult Create() => View(CreateViewModel());
 
-            return View(breed);
-        }
-
-        // GET: Breeds/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: Breeds/Create
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name")] Breed breed)
+        public async Task<IActionResult> Create([Bind("Name,BreedId")] Breed breed)
         {
-            if (ModelState.IsValid)
+            string validationMessage = ValidateBreed(breed);
+
+            if (!string.IsNullOrEmpty(validationMessage))
             {
-                _context.Add(breed);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return View(CreateViewModel(validationMessage, breed));
             }
-            return View(breed);
+
+            if (breed.BreedId > 0)
+            {
+                Breed parentBreed = context.Breeds.SingleOrDefault(b => b.Id == breed.BreedId);
+
+                if (parentBreed is null)
+                {
+                    return View(CreateViewModel("The parent Breed selected could not be found.", breed));
+                }
+
+                breed.ParentBreed = parentBreed;
+            }
+
+            context.Add(breed);
+            await context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
 
-        // GET: Breeds/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var breed = await _context.Breeds.SingleOrDefaultAsync(m => m.Id == id);
-            if (breed == null)
-            {
-                return NotFound();
-            }
-            return View(breed);
-        }
-
-        // POST: Breeds/Edit/5
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
+        public async Task<IActionResult> Edit(int? id) => View(await GetBreed(id));
+        
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name")] Breed breed)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,BreedId")] Breed breed)
         {
-            if (id != breed.Id)
+            string validationMessage = ValidateBreed(id, breed);
+
+            if (!string.IsNullOrEmpty(validationMessage))
             {
-                return NotFound();
+                return View(CreateViewModel(validationMessage, breed));
             }
 
-            if (ModelState.IsValid)
+            if (breed.BreedId > 0)
             {
-                try
+                Breed parentBreed = context.Breeds.SingleOrDefault(b => b.Id == breed.BreedId);
+
+                if (parentBreed is null)
                 {
-                    _context.Update(breed);
-                    await _context.SaveChangesAsync();
+                    return View(CreateViewModel("The parent Breed selected could not be found.", breed));
                 }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!BreedExists(breed.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+
+                breed.ParentBreed = parentBreed;
             }
-            return View(breed);
+            else
+            {
+                breed.ParentBreed = new Breed();
+            }
+
+            try
+            {
+                Breed existingBreed = context.Breeds.Single(b => b.Id == id);
+
+                existingBreed.Name = breed.Name;
+                existingBreed.BreedId = breed.BreedId;
+                await context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!BreedExists(breed.Id))
+                {
+                    return View(CreateViewModel("The selected Breed could not be found."));
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return RedirectToAction(nameof(Index));
         }
 
-        // GET: Breeds/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+        public async Task<IActionResult> Delete(int? id) => View(await GetBreed(id));
 
-            var breed = await _context.Breeds
-                .SingleOrDefaultAsync(m => m.Id == id);
-            if (breed == null)
-            {
-                return NotFound();
-            }
-
-            return View(breed);
-        }
-
-        // POST: Breeds/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var breed = await _context.Breeds.SingleOrDefaultAsync(m => m.Id == id);
-            _context.Breeds.Remove(breed);
-            await _context.SaveChangesAsync();
+            Breed breed = await context.Breeds.SingleOrDefaultAsync(m => m.Id == id);
+
+            if (breed != null)
+            {
+                if (!context.Individuals.Any(i => i.BreedId == id) && !context.Breeds.Any(b => b.ParentBreed.Id == id))
+                {
+                    try
+                    {
+                        context.Breeds.Remove(breed);
+
+                        await context.SaveChangesAsync();
+                    }
+                    catch (DbUpdateConcurrencyException ex)
+                    {
+                        if (BreedExists(breed.Id))
+                        {
+                            throw;
+                        }
+                    }
+                }                   
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
-        private bool BreedExists(int id)
+        private bool BreedExists(int id) => context.Breeds.Any(e => e.Id == id);
+
+        private async Task<BreedViewModel> GetBreed(int? id)
         {
-            return _context.Breeds.Any(e => e.Id == id);
+            if (id == null)
+            {
+                return CreateViewModel("The Breed ID provided was invalid.");
+            }
+
+            if (id <= 0 || id > int.MaxValue)
+            {
+                return CreateViewModel($"The Breed ID must be between 1 and {int.MaxValue}.");
+            }
+
+            Breed breed = await context.Breeds.SingleOrDefaultAsync(m => m.Id == id);
+
+            if (breed == null)
+            {
+                return CreateViewModel("The selected Breed could not be found.");
+            }
+
+            return CreateViewModel(breed);
+        }
+
+        private BreedViewModel CreateViewModel() =>  CreateViewModel(string.Empty, new Breed());
+
+        private  BreedViewModel CreateViewModel(string message) =>  CreateViewModel(message, new Breed());
+
+        private  BreedViewModel CreateViewModel(Breed breed) =>  CreateViewModel(string.Empty, breed);
+
+        private  BreedViewModel CreateViewModel(string message, Breed breed)
+        {
+            var viewModel = new BreedViewModel(breed)
+            {
+                Individuals = context.Individuals.Where(individual => individual.BreedId == breed.Id),
+                Breeds = context.Breeds.Where(b => b.Id != breed.Id),
+                ChildBreeds = context.Breeds.Where(b => b.BreedId == breed.Id)
+            };
+
+            if (!string.IsNullOrEmpty(message))
+            {
+                viewModel.Messages.Add(message);
+            }
+
+            return viewModel;
+        }
+
+        private string ValidateBreed(Breed breed)
+        {
+            if (string.IsNullOrEmpty(breed.Name))
+            {
+                return "A Breed must have a name.";
+            }
+
+            if (breed.BreedId < 0 || breed.BreedId > int.MaxValue)
+            {
+                return $"The Parent Breed ID cannot be negative or greater than {int.MaxValue}.";
+            }
+
+            return string.Empty;
+        }
+
+        private string ValidateBreed(int id, Breed breed)
+        {
+            if (id != breed.Id)
+            {
+                return "The Breed ID provided doesn't match the Breed being updated.";
+            }
+            
+            if (id <= 0 || id > int.MaxValue)
+            {
+                return $"The Breed ID must be between 1 and {int.MaxValue}.";
+            }
+
+            if (!context.Breeds.Any(b => b.Id == id))
+            {
+                return "The selected Breed could not be found.";
+            }
+
+            if (breed.BreedId >= 0 && breed.BreedId == id)
+            {
+                return "A breed cannot be set as it's own Parent Breed.";
+            }
+
+            return ValidateBreed(breed);
         }
     }
 }

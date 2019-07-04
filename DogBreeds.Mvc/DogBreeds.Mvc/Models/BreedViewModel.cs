@@ -11,23 +11,20 @@ namespace DogBreeds.Mvc.Models
     {
         public BreedViewModel() { }
 
-        public BreedViewModel(Breed breed) : this(breed.Id, breed.Name)
-        {
-        }
+        public BreedViewModel(Breed breed) => Breed = breed;
 
-        public BreedViewModel(string name) => Name = name;
+        public BreedViewModel(string name) => Breed = new Breed(name);
 
-        public BreedViewModel(int id, string name) : this(name) => Id = id;
+        public BreedViewModel(int id, string name) : this(name) => Breed = new Breed(id, name);
 
-        public int Id { get; set; }
-
-        [Display(Name = "Name")]
-        [Required(ErrorMessage = "You must enter a name for this Breed.")]
-        [StringLength(255, MinimumLength = 1, ErrorMessage = "You must enter a name for this Breed.")]
-        public string Name { get; set; }
+        public Breed Breed { get; private set; } = new Breed();
 
         public IEnumerable<Individual> Individuals { get; set; } = new List<Individual>();
 
+        public IEnumerable<Breed> ChildBreeds { get; set; } = new List<Breed>();
+
+        public IEnumerable<Breed> Breeds { get; set; } = new List<Breed>();
+        
         public IList<string> Messages { get; set; } = new List<string>();
     }
 }
