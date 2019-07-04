@@ -78,11 +78,7 @@ namespace DogBreeds.Mvc.Controllers
 
                 breed.ParentBreed = parentBreed;
             }
-            else
-            {
-                breed.ParentBreed = new Breed();
-            }
-
+          
             try
             {
                 Breed existingBreed = context.Breeds.Single(b => b.Id == id);
