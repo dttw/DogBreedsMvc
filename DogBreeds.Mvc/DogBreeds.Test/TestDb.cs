@@ -18,6 +18,8 @@ namespace DogBreeds.Test
         {
             DbContextOptionsBuilder<DogBreedsContext> builder = new DbContextOptionsBuilder<DogBreedsContext>().UseInMemoryDatabase();
 
+            builder.EnableSensitiveDataLogging();
+
             var context = new DogBreedsContext(builder.Options);
 
             Context = context;

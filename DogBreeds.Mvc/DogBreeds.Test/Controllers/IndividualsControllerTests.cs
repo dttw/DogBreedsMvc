@@ -22,12 +22,144 @@ namespace DogIndividuals.Test
             return viewModel;
         }
 
-        private void CheckMessage(IndividualViewModel viewModel, string message)
+        private void CheckMessage(IActionResult result, string message)
         {
+            var viewModel = CheckViewModel(result);
+
             Assert.True(viewModel.Messages.Any());
             Assert.Equal(message, viewModel.Messages.FirstOrDefault());
         }
+        
+        [Fact]
+        public async void GetIndex()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new IndividualsController(database.Context);
 
+                IActionResult result = await controller.Index();
+
+                ViewResult viewResult = Assert.IsType<ViewResult>(result);
+                IEnumerable<Individual> individuals = Assert.IsAssignableFrom<IEnumerable<Individual>>(viewResult.ViewData.Model);
+
+                Assert.Equal(database.Context.Individuals.Count(), individuals.Count());
+            }
+        }
+
+        #region Create
+
+        #region Get
+        [Fact]
+        public void GetCreate()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new IndividualsController(database.Context);
+
+                IActionResult result = controller.Create();
+
+                IndividualViewModel viewModel = CheckViewModel(result);
+
+                Assert.Equal(0, viewModel.Individual.Id);
+                Assert.Equal(0, viewModel.Individual.Breed.Id);
+                Assert.True(string.IsNullOrEmpty(viewModel.Individual.Name));
+                Assert.NotEmpty(viewModel.Breeds);
+            }
+        }
+
+        #endregion
+
+        #region Post
+        [Fact]
+        public async void PostCreateSuccess()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new IndividualsController(database.Context);
+
+                IActionResult result = await controller.Create(new Individual("Test Individual Success", 1));
+
+                RedirectToActionResult redirect = Assert.IsType<RedirectToActionResult>(result);
+
+                Assert.Equal("Index", redirect.ActionName);
+
+                Individual individual = database.Context.Individuals.SingleOrDefault(i => i.Name == "Test Individual Success");
+
+                Assert.False(individual == null);
+            }
+        }
+
+        [Fact]
+        public async void PostCreateNullName()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new IndividualsController(database.Context);
+
+                IActionResult result = await controller.Create(new Individual());
+
+                CheckMessage(result, "An Individual must have a name.");
+            }
+        }
+
+        [Fact]
+        public async void PostCreateNullBreedId()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new IndividualsController(database.Context);
+
+                IActionResult result = await controller.Create(new Individual() { Name = "Test Individual 11" });
+
+                CheckMessage(result, "You must select a Breed for this Individual.");
+            }
+        }
+
+        [Fact]
+        public async void PostCreateZeroBreedId()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new IndividualsController(database.Context);
+
+                IActionResult result = await controller.Create(new Individual("Test Individual 11", 0));
+
+                CheckMessage(result, "You must select a Breed for this Individual.");
+            }
+        }
+
+        [Fact]
+        public async void PostCreateNegativeBreedId()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new IndividualsController(database.Context);
+
+                IActionResult result = await controller.Create(new Individual("Test Individual 11", -1));
+
+                CheckMessage(result, $"The Breed ID must be between 1 and {int.MaxValue}.");
+            }
+        }
+
+        [Fact]
+        public async void PostCreateBreedDoesntExist()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new IndividualsController(database.Context);
+
+                IActionResult result = await controller.Create(new Individual("Test Individual 11", 100));
+
+                CheckMessage(result, "The selected Breed could not be found.");
+            }
+        }
+        #endregion
+
+        #endregion
+
+        #region Details
+
+        #region Get
         [Fact]
         public async void GetDetailsFound()
         {
@@ -55,9 +187,7 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Details(null);
 
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, "The Individual ID provided was invalid.");
+                CheckMessage(result, "The Individual ID provided was invalid.");
             }
         }
 
@@ -70,9 +200,7 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Details(0);
 
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, $"The Individual ID must be between 1 and {int.MaxValue}.");
+                CheckMessage(result, $"The Individual ID must be between 1 and {int.MaxValue}.");
             }
         }
 
@@ -85,9 +213,7 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Details(-1);
 
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, $"The Individual ID must be between 1 and {int.MaxValue}.");
+                CheckMessage(result, $"The Individual ID must be between 1 and {int.MaxValue}.");
             }
         }
 
@@ -100,140 +226,16 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Details(50);
 
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, "The selected Individual could not be found.");
+                CheckMessage(result, "The selected Individual could not be found.");
             }
         }
+        #endregion
 
-        [Fact]
-        public void GetCreate()
-        {
-            using (var database = new TestDb())
-            {
-                var controller = new IndividualsController(database.Context);
+        #endregion
 
-                IActionResult result = controller.Create();
+        #region Edit
 
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                Assert.Equal(0, viewModel.Individual.Id);
-                Assert.Equal(0, viewModel.Individual.Breed.Id);
-                Assert.True(string.IsNullOrEmpty(viewModel.Individual.Name));
-                Assert.NotEmpty(viewModel.Breeds);
-            }
-        }
-
-        [Fact]
-        public async void PostCreateSuccess()
-        {
-            using (var database = new TestDb())
-            {
-                var controller = new IndividualsController(database.Context);
-
-                IActionResult result = await controller.Create(new Individual("Test Individual Success", 1));
-
-                RedirectToActionResult redirect = Assert.IsType<RedirectToActionResult>(result);
-
-                Assert.Equal("Index", redirect.ActionName);
-
-                Individual individual = database.Context.Individuals.SingleOrDefault(i => i.Name == "Test Individual Success");
-
-                Assert.False(individual == null);
-                Assert.Equal(1, individual.Breed.Id);
-            }
-        }
-
-        [Fact]
-        public async void PostCreateNullName()
-        {
-            using (var database = new TestDb())
-            {
-                var controller = new IndividualsController(database.Context);
-
-                IActionResult result = await controller.Create(new Individual());
-
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                Assert.Equal(0, viewModel.Individual.Id);
-                Assert.True(string.IsNullOrEmpty(viewModel.Individual.Name));
-
-                CheckMessage(viewModel, "You must enter a name for this Individual.");
-            }
-        }
-
-        [Fact]
-        public async void PostCreateNullBreedId()
-        {
-            using (var database = new TestDb())
-            {
-                var controller = new IndividualsController(database.Context);
-
-                IActionResult result = await controller.Create(new Individual() { Name = "Test Individual 11" });
-
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                Assert.Equal(0, viewModel.Individual.Id);
-                Assert.Equal("Test Individual 11", viewModel.Individual.Name);
-
-                CheckMessage(viewModel, "You must select a Breed for this Individual.");
-            }
-        }
-
-        [Fact]
-        public async void PostCreateZeroBreedId()
-        {
-            using (var database = new TestDb())
-            {
-                var controller = new IndividualsController(database.Context);
-
-                IActionResult result = await controller.Create(new Individual("Test Individual 11", 0));
-
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                Assert.Equal(0, viewModel.Individual.Id);
-                Assert.Equal("Test Individual 11", viewModel.Individual.Name);
-
-                CheckMessage(viewModel, "You must select a Breed for this Individual.");
-            }
-        }
-
-        [Fact]
-        public async void PostCreateNegativeBreedId()
-        {
-            using (var database = new TestDb())
-            {
-                var controller = new IndividualsController(database.Context);
-
-                IActionResult result = await controller.Create(new Individual("Test Individual 11", -1));
-
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                Assert.Equal(0, viewModel.Individual.Id);
-                Assert.Equal("Test Individual 11", viewModel.Individual.Name);
-
-                CheckMessage(viewModel, "The Breed selected is invalid.");
-            }
-        }
-
-        [Fact]
-        public async void PostCreateBreedDoesntExist()
-        {
-            using (var database = new TestDb())
-            {
-                var controller = new IndividualsController(database.Context);
-
-                IActionResult result = await controller.Create(new Individual("Test Individual 11", 100));
-
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                Assert.Equal(0, viewModel.Individual.Id);
-                Assert.Equal("Test Individual 11", viewModel.Individual.Name);
-
-                CheckMessage(viewModel, "The Breed selected is invalid.");
-            }
-        }
-
+        #region Get
         [Fact]
         public async void GetEditFound()
         {
@@ -261,9 +263,7 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Edit(null);
 
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, "The Individual ID provided was invalid.");
+                CheckMessage(result, "The Individual ID provided was invalid.");
             }
         }
 
@@ -276,9 +276,7 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Edit(0);
 
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, $"The Individual ID must be between 1 and {int.MaxValue}.");
+                CheckMessage(result, $"The Individual ID must be between 1 and {int.MaxValue}.");
             }
         }
 
@@ -291,9 +289,7 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Edit(-1);
 
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, $"The Individual ID must be between 1 and {int.MaxValue}.");
+                CheckMessage(result, $"The Individual ID must be between 1 and {int.MaxValue}.");
             }
         }
 
@@ -306,12 +302,13 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Edit(100);
 
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, "The selected Individual could not be found.");
+                CheckMessage(result, "The selected Individual could not be found.");
             }
         }
 
+        #endregion
+
+        #region Post
         [Fact]
         public async void PostEditSaved()
         {
@@ -340,9 +337,7 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Edit(0, new Individual());
 
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, $"The Individual ID must be between 1 and {int.MaxValue}.");
+                CheckMessage(result, $"The Individual ID must be between 1 and {int.MaxValue}.");
             }
         }
 
@@ -355,9 +350,7 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Edit(1, new Individual { Id = 2 });
 
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, "The Individual ID provided was invalid.");
+                CheckMessage(result, "The Individual ID provided was invalid.");
             }
         }
 
@@ -370,9 +363,7 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Edit(-1, new Individual(-1, "Test Individual", 3));
 
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, $"The Individual ID must be between 1 and {int.MaxValue}.");
+                CheckMessage(result, $"The Individual ID must be between 1 and {int.MaxValue}.");
             }
         }
 
@@ -385,13 +376,10 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Edit(2, new Individual(2, string.Empty, 2));
 
-                ViewResult viewResult = Assert.IsType<ViewResult>(result);
-                IndividualViewModel viewModel = Assert.IsAssignableFrom<IndividualViewModel>(viewResult.ViewData.Model);
-
-                CheckMessage(viewModel, "An Individual must have a name.");
+                CheckMessage(result, "An Individual must have a name.");
             }
         }
-        
+
         [Fact]
         public async void PostEditNegativeBreedId()
         {
@@ -401,10 +389,7 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Edit(2, new Individual(2, "Fido", -1));
 
-                ViewResult viewResult = Assert.IsType<ViewResult>(result);
-                IndividualViewModel viewModel = Assert.IsAssignableFrom<IndividualViewModel>(viewResult.ViewData.Model);
-
-                CheckMessage(viewModel, "The Breed selected is invalid.");
+                CheckMessage(result, $"The Breed ID must be between 1 and {int.MaxValue}.");
             }
         }
 
@@ -417,10 +402,20 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Edit(2, new Individual(2, "Fido", 0));
 
-                ViewResult viewResult = Assert.IsType<ViewResult>(result);
-                IndividualViewModel viewModel = Assert.IsAssignableFrom<IndividualViewModel>(viewResult.ViewData.Model);
+                CheckMessage(result, "You must select a Breed for this Individual.");
+            }
+        }
 
-                CheckMessage(viewModel, "You must select a Breed for this Individual.");
+        [Fact]
+        public async void PostEditNullBreedId()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new IndividualsController(database.Context);
+
+                IActionResult result = await controller.Edit(2, new Individual { Id = 2, Name = "Fido" });
+
+                CheckMessage(result, "You must select a Breed for this Individual.");
             }
         }
 
@@ -433,10 +428,7 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Edit(2, new Individual(2, "Fido", 100));
 
-                ViewResult viewResult = Assert.IsType<ViewResult>(result);
-                IndividualViewModel viewModel = Assert.IsAssignableFrom<IndividualViewModel>(viewResult.ViewData.Model);
-
-                CheckMessage(viewModel, "The Breed selected is invalid.");
+                CheckMessage(result, "The selected Breed could not be found.");
             }
         }
 
@@ -447,30 +439,19 @@ namespace DogIndividuals.Test
             {
                 var controller = new IndividualsController(database.Context);
 
-                IActionResult result = await controller.Edit(50, new Individual(50, "Test Individual 6 Modified", 2));
+                IActionResult result = await controller.Edit(50, new Individual(50, "Test Individual Modified", 2));
 
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, "The selected Individual could not be found.");
+                CheckMessage(result, "The selected Individual could not be found.");
             }
         }
 
-        [Fact]
-        public async void GetIndex()
-        {
-            using (var database = new TestDb())
-            {
-                var controller = new IndividualsController(database.Context);
+        #endregion
+        
+        #endregion
 
-                IActionResult result = await controller.Index();
+        #region Delete
 
-                ViewResult viewResult = Assert.IsType<ViewResult>(result);
-                IEnumerable<Individual> individuals = Assert.IsAssignableFrom<IEnumerable<Individual>>(viewResult.ViewData.Model);
-
-                Assert.Equal(database.Context.Individuals.Count(), individuals.Count());
-            }
-        }
-
+        #region Get
         [Fact]
         public async void GetDeleteFound()
         {
@@ -498,9 +479,7 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Delete(50);
 
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, "The selected Individual could not be found.");
+                CheckMessage(result, "The selected Individual could not be found.");
             }
         }
 
@@ -513,9 +492,7 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Delete(null);
 
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, "The Individual ID provided was invalid.");
+                CheckMessage(result, "The Individual ID provided was invalid.");
             }
         }
 
@@ -528,12 +505,10 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Delete(0);
 
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, $"The Individual ID must be between 1 and {int.MaxValue}.");
+                CheckMessage(result, $"The Individual ID must be between 1 and {int.MaxValue}.");
             }
         }
-        
+
         [Fact]
         public async void GetDeleteNegativeId()
         {
@@ -543,12 +518,13 @@ namespace DogIndividuals.Test
 
                 IActionResult result = await controller.Delete(-1);
 
-                IndividualViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, $"The Individual ID must be between 1 and {int.MaxValue}.");
+                CheckMessage(result, $"The Individual ID must be between 1 and {int.MaxValue}.");
             }
         }
 
+        #endregion
+        
+        #region Post
         [Fact]
         public async void PostDeleteConfirmNotFound()
         {
@@ -556,7 +532,7 @@ namespace DogIndividuals.Test
             {
                 var controller = new IndividualsController(database.Context);
 
-                IActionResult result = await controller.DeleteConfirmed(8);
+                IActionResult result = await controller.DeleteConfirmed(500);
 
                 RedirectToActionResult redirect = Assert.IsType<RedirectToActionResult>(result);
 
@@ -612,6 +588,9 @@ namespace DogIndividuals.Test
                 Assert.False(database.Context.Individuals.Any(i => i.Id == 3));
             }
         }
+        #endregion
+        
+        #endregion
     }
 }
 

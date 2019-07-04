@@ -19,93 +19,33 @@ namespace DogBreeds.Test
             return viewModel;
         }
 
-        private void CheckMessage(BreedViewModel viewModel, string message)
+        private void CheckMessage(IActionResult result, string message)
         {
+            BreedViewModel viewModel = CheckViewModel(result);
+
             Assert.True(viewModel.Messages.Any());
             Assert.Equal(message, viewModel.Messages.FirstOrDefault());
         }
-
+        
         [Fact]
-        public async void GetDetailsFound()
-        {
-            using (var database = new TestDb())
-            {
-                var controller = new BreedsController(database.Context);
-
-                IActionResult result = await controller.Details(8);
-
-                BreedViewModel viewModel = CheckViewModel(result);
-                Breed breed = database.Context.Breeds.SingleOrDefault(b => b.Id == 8);
-
-                Assert.Equal(8, viewModel.Breed.Id);
-                Assert.Equal(breed.Name, viewModel.Breed.Name);
-            }
-        }
-
-        [Fact]
-        public async void GetDetailsNullId()
+        public async void GetIndex()
         {
             using (var database = new TestDb())
             {
 
                 var controller = new BreedsController(database.Context);
 
-                IActionResult result = await controller.Details(null);
+                IActionResult result = await controller.Index();
 
-                BreedViewModel viewModel = CheckViewModel(result);
+                ViewResult viewResult = Assert.IsType<ViewResult>(result);
+                IEnumerable<Breed> breeds = Assert.IsAssignableFrom<IEnumerable<Breed>>(viewResult.ViewData.Model);
 
-                CheckMessage(viewModel, "The Breed ID provided was invalid.");
+                Assert.Equal(database.Context.Breeds.Count(), breeds.Count());
             }
         }
 
-        [Fact]
-        public async void GetDetailsZeroId()
-        {
-            using (var database = new TestDb())
-            {
-
-                var controller = new BreedsController(database.Context);
-
-                IActionResult result = await controller.Details(0);
-
-                BreedViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, $"The Breed ID must be between 1 and {int.MaxValue}.");
-            }
-        }
-
-        [Fact]
-        public async void GetDetailsNegativeId()
-        {
-            using (var database = new TestDb())
-            {
-
-                var controller = new BreedsController(database.Context);
-
-                IActionResult result = await controller.Details(-1);
-
-                BreedViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, $"The Breed ID must be between 1 and {int.MaxValue}.");
-            }
-        }
-
-        [Fact]
-        public async void GetDetailsNotFound()
-        {
-            using (var database = new TestDb())
-            {
-
-                var controller = new BreedsController(database.Context);
-
-                IActionResult result = await controller.Details(50);
-
-                BreedViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, "The selected Breed could not be found.");
-            }
-        }
-
+        #region Create
+        #region Get
         [Fact]
         public void GetCreate()
         {
@@ -122,7 +62,9 @@ namespace DogBreeds.Test
                 Assert.True(string.IsNullOrEmpty(viewModel.Breed.Name));
             }
         }
+        #endregion
 
+        #region Post 
         [Fact]
         public async void PostCreateSuccess()
         {
@@ -147,17 +89,168 @@ namespace DogBreeds.Test
         {
             using (var database = new TestDb())
             {
-
                 var controller = new BreedsController(database.Context);
 
                 IActionResult result = await controller.Create(new Breed());
 
+                CheckMessage(result, "A Breed must have a name.");
+            }
+        }
+
+        [Fact]
+        public async void PostCreateParentBreedNull()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new BreedsController(database.Context);
+
+                IActionResult result = await controller.Create(new Breed { Name = "Test Breed with Null Parent Breed", BreedId = null });
+
+                RedirectToActionResult redirect = Assert.IsType<RedirectToActionResult>(result);
+
+                Assert.Equal("Index", redirect.ActionName);
+
+                Breed breed = database.Context.Breeds.LastOrDefault();
+
+                Assert.Equal("Test Breed with Null Parent Breed", breed.Name);
+            }
+        }
+
+        [Fact]
+        public async void PostCreateParentBreedZero()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new BreedsController(database.Context);
+
+                IActionResult result = await controller.Create(new Breed { Name = "Test Breed with Zero Parent Breed", BreedId = 0 });
+
+                RedirectToActionResult redirect = Assert.IsType<RedirectToActionResult>(result);
+
+                Assert.Equal("Index", redirect.ActionName);
+
+                Breed breed = database.Context.Breeds.LastOrDefault();
+
+                Assert.Equal("Test Breed with Zero Parent Breed", breed.Name);
+            }
+        }
+
+        [Fact]
+        public async void PostCreateParentBreedNegative()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new BreedsController(database.Context);
+
+                IActionResult result = await controller.Create(new Breed { Name = "Test Breed with Negative Parent Breed", BreedId = -1 });
+          
+                CheckMessage(result, $"The Parent Breed ID cannot be negative or greater than {int.MaxValue}.");
+            }
+        }
+
+        [Fact]
+        public async void PostCreateParentBreedDoesntExist()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new BreedsController(database.Context);
+
+                IActionResult result = await controller.Create(new Breed { Name = "Test Breed with Invalid Parent Breed", BreedId = 500 });
+
+                CheckMessage(result, "The parent Breed selected could not be found.");
+            }
+        }
+
+        [Fact]
+        public async void PostCreateWithParentBreedSuccess()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new BreedsController(database.Context);
+
+                IActionResult result = await controller.Create(new Breed { Name = "Test Breed with Parent Breed", BreedId = 1 });
+
+                RedirectToActionResult redirect = Assert.IsType<RedirectToActionResult>(result);
+
+                Assert.Equal("Index", redirect.ActionName);
+
+                Breed breed = database.Context.Breeds.LastOrDefault();
+
+                Assert.Equal("Test Breed with Parent Breed", breed.Name);
+                Assert.Equal(1, breed.ParentBreed.Id);
+            }
+        }
+        #endregion
+        #endregion
+
+        #region Details
+        #region Get
+        [Fact]
+        public async void GetDetailsFound()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new BreedsController(database.Context);
+
+                IActionResult result = await controller.Details(8);
+
                 BreedViewModel viewModel = CheckViewModel(result);
+                Breed breed = database.Context.Breeds.SingleOrDefault(b => b.Id == 8);
 
-                Assert.Equal(0, viewModel.Breed.Id);
-                Assert.True(string.IsNullOrEmpty(viewModel.Breed.Name));
+                Assert.Equal(8, viewModel.Breed.Id);
+                Assert.Equal(breed.Name, viewModel.Breed.Name);
+            }
+        }
 
-                CheckMessage(viewModel, "A Breed must have a name.");
+        [Fact]
+        public async void GetDetailsNullId()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new BreedsController(database.Context);
+
+                IActionResult result = await controller.Details(null);
+
+                CheckMessage(result, "The Breed ID provided was invalid.");
+            }
+        }
+
+        [Fact]
+        public async void GetDetailsZeroId()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new BreedsController(database.Context);
+
+                IActionResult result = await controller.Details(0);
+
+                CheckMessage(result, $"The Breed ID must be between 1 and {int.MaxValue}.");
+            }
+        }
+
+        [Fact]
+        public async void GetDetailsNegativeId()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new BreedsController(database.Context);
+
+                IActionResult result = await controller.Details(-1);
+
+                CheckMessage(result, $"The Breed ID must be between 1 and {int.MaxValue}.");
+            }
+        }
+
+        [Fact]
+        public async void GetDetailsNotFound()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new BreedsController(database.Context);
+
+                IActionResult result = await controller.Details(50);
+
+                CheckMessage(result, "The selected Breed could not be found.");
             }
         }
 
@@ -178,7 +271,11 @@ namespace DogBreeds.Test
                 Assert.Equal(viewModel.Individuals.Count(), database.Context.Individuals.Count(m => m.Breed.Id == 8));
             }
         }
-        
+        #endregion
+        #endregion
+
+        #region Edit 
+        #region Get
         [Fact]
         public async void GetEditFound()
         {
@@ -202,14 +299,11 @@ namespace DogBreeds.Test
         {
             using (var database = new TestDb())
             {
-
                 var controller = new BreedsController(database.Context);
 
                 IActionResult result = await controller.Edit(null);
 
-                BreedViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, "The Breed ID provided was invalid.");
+                CheckMessage(result, "The Breed ID provided was invalid.");
             }
         }
 
@@ -218,14 +312,11 @@ namespace DogBreeds.Test
         {
             using (var database = new TestDb())
             {
-
                 var controller = new BreedsController(database.Context);
 
                 IActionResult result = await controller.Edit(0);
 
-                BreedViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, $"The Breed ID must be between 1 and {int.MaxValue}.");
+                CheckMessage(result, $"The Breed ID must be between 1 and {int.MaxValue}.");
             }
         }
 
@@ -234,14 +325,11 @@ namespace DogBreeds.Test
         {
             using (var database = new TestDb())
             {
-
                 var controller = new BreedsController(database.Context);
 
                 IActionResult result = await controller.Edit(-1);
 
-                BreedViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, $"The Breed ID must be between 1 and {int.MaxValue}.");
+                CheckMessage(result, $"The Breed ID must be between 1 and {int.MaxValue}.");
             }
         }
 
@@ -250,17 +338,16 @@ namespace DogBreeds.Test
         {
             using (var database = new TestDb())
             {
-
                 var controller = new BreedsController(database.Context);
 
                 IActionResult result = await controller.Edit(50);
 
-                BreedViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, "The selected Breed could not be found.");
+                CheckMessage(result, "The selected Breed could not be found.");
             }
         }
+        #endregion
 
+        #region Post 
         [Fact]
         public async void PostEditSuccess()
         {
@@ -276,23 +363,119 @@ namespace DogBreeds.Test
 
                 Breed breed = database.Context.Breeds.SingleOrDefault(b => b.Id == 6);
 
-                Assert.Equal("Modified Breed", breed.Name);    
+                Assert.Equal("Modified Breed", breed.Name);
             }
         }
 
         [Fact]
-        public async void PostEditNullId()
+        public async void PostEditParentBreedNull()
         {
             using (var database = new TestDb())
             {
-
                 var controller = new BreedsController(database.Context);
 
-                IActionResult result = await controller.Edit(null);
+                IActionResult result = await controller.Edit(10, new Breed { Id = 10, Name = "Test Breed with Null Parent Breed", BreedId = null });
+
+                RedirectToActionResult redirect = Assert.IsType<RedirectToActionResult>(result);
+
+                Assert.Equal("Index", redirect.ActionName);
+
+                Breed breed = database.Context.Breeds.SingleOrDefault(b => b.Id == 10);
+
+                Assert.Equal("Test Breed with Null Parent Breed", breed.Name);
+            }
+        }
+
+        [Fact]
+        public async void PostEditParentSetAsOwnParent()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new BreedsController(database.Context);
+
+                IActionResult result = await controller.Edit(1, new Breed { Id = 1, Name = "Test Breed with Null Parent Breed", BreedId = 1 });
+              
+                CheckMessage(result, "A breed cannot be set as it's own Parent Breed.");
+            }
+        }
+
+        [Fact]
+        public async void PostEditParentBreedZero()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new BreedsController(database.Context);
+
+                IActionResult result = await controller.Edit(1, new Breed { Id = 1, Name = "Test Breed with Zero Parent Breed", BreedId = 0 });
+
+                RedirectToActionResult redirect = Assert.IsType<RedirectToActionResult>(result);
+
+                Assert.Equal("Index", redirect.ActionName);
+
+                Breed breed = database.Context.Breeds.SingleOrDefault(b => b.Name == "Test Breed with Zero Parent Breed");
+
+                Assert.Equal(1, breed.Id);
+            }
+        }
+
+        [Fact]
+        public async void PostEditParentBreedNegative()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new BreedsController(database.Context);
+
+                IActionResult result = await controller.Edit(1, new Breed { Id = 1, Name = "Test Breed with Negative Parent Breed", BreedId = -1 });
+
+                CheckMessage(result, $"The Parent Breed ID cannot be negative or greater than {int.MaxValue}.");
+            }
+        }
+
+        [Fact]
+        public async void PostEditParentBreedDoesntExist()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new BreedsController(database.Context);
+
+                IActionResult result = await controller.Edit(1, new Breed { Id = 1, Name = "Test Breed with Invalid Parent Breed", BreedId = 500 });
 
                 BreedViewModel viewModel = CheckViewModel(result);
 
-                CheckMessage(viewModel, "The Breed ID provided was invalid.");
+                CheckMessage(result, "The parent Breed selected could not be found.");
+            }
+        }
+
+        [Fact]
+        public async void PostEditWithParentBreedSuccess()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new BreedsController(database.Context);
+
+                IActionResult result = await controller.Edit(1, new Breed { Id = 1, Name = "Test Breed with Parent Breed", BreedId = 2 });
+
+                RedirectToActionResult redirect = Assert.IsType<RedirectToActionResult>(result);
+
+                Assert.Equal("Index", redirect.ActionName);
+
+                Breed breed = database.Context.Breeds.SingleOrDefault(b => b.Name == "Test Breed with Parent Breed");
+
+                Assert.Equal(1, breed.Id);
+                Assert.Equal(2, breed.BreedId);
+            }
+        }
+
+        [Fact]
+        public async void PostEditNoName()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new BreedsController(database.Context);
+
+                IActionResult result = await controller.Edit(1, new Breed(1, string.Empty));
+
+                CheckMessage(result, "A Breed must have a name.");
             }
         }
 
@@ -301,14 +484,24 @@ namespace DogBreeds.Test
         {
             using (var database = new TestDb())
             {
-
                 var controller = new BreedsController(database.Context);
 
-                IActionResult result = await controller.Edit(6, new Breed(6));
+                IActionResult result = await controller.Edit(0, new Breed(0));
 
-                BreedViewModel viewModel = CheckViewModel(result);
+                CheckMessage(result, $"The Breed ID must be between 1 and {int.MaxValue}.");
+            }
+        }
 
-                CheckMessage(viewModel, "A Breed must have a name.");
+        [Fact]
+        public async void PostEditMismatchedIds()
+        {
+            using (var database = new TestDb())
+            {
+                var controller = new BreedsController(database.Context);
+
+                IActionResult result = await controller.Edit(7, new Breed(6));
+
+                CheckMessage(result, "The Breed ID provided doesn't match the Breed being updated.");
             }
         }
 
@@ -317,14 +510,11 @@ namespace DogBreeds.Test
         {
             using (var database = new TestDb())
             {
-
                 var controller = new BreedsController(database.Context);
 
                 IActionResult result = await controller.Edit(-1, new Breed(-1, string.Empty));
 
-                BreedViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, $"The Breed ID must be between 1 and {int.MaxValue}.");
+                CheckMessage(result, $"The Breed ID must be between 1 and {int.MaxValue}.");
             }
         }
 
@@ -333,34 +523,18 @@ namespace DogBreeds.Test
         {
             using (var database = new TestDb())
             {
-
                 var controller = new BreedsController(database.Context);
 
                 IActionResult result = await controller.Edit(50, new Breed(50, "Test Breed 6 Modified"));
 
-                BreedViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, "The selected Breed could not be found.");
+                CheckMessage(result, "The selected Breed could not be found.");
             }
         }
+        #endregion
+        #endregion
 
-        [Fact]
-        public async void GetIndex()
-        {
-            using (var database = new TestDb())
-            {
-
-                var controller = new BreedsController(database.Context);
-
-                IActionResult result = await controller.Index();
-
-                ViewResult viewResult = Assert.IsType<ViewResult>(result);
-                IEnumerable<Breed> breeds = Assert.IsAssignableFrom<IEnumerable<Breed>>(viewResult.ViewData.Model);
-
-                Assert.Equal(database.Context.Breeds.Count(), breeds.Count());
-            }
-        }
-  
+        #region Delete
+        #region Get
         [Fact]
         public async void GetDeleteSuccess()
         {
@@ -383,14 +557,11 @@ namespace DogBreeds.Test
         {
             using (var database = new TestDb())
             {
-
                 var controller = new BreedsController(database.Context);
 
                 IActionResult result = await controller.Delete(50);
 
-                BreedViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, "The selected Breed could not be found.");
+                CheckMessage(result, "The selected Breed could not be found.");
             }
         }
 
@@ -399,14 +570,11 @@ namespace DogBreeds.Test
         {
             using (var database = new TestDb())
             {
-
                 var controller = new BreedsController(database.Context);
 
                 IActionResult result = await controller.Delete(null);
 
-                BreedViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, "The Breed ID provided was invalid.");
+                CheckMessage(result, "The Breed ID provided was invalid.");
             }
         }
 
@@ -415,14 +583,11 @@ namespace DogBreeds.Test
         {
             using (var database = new TestDb())
             {
-
                 var controller = new BreedsController(database.Context);
 
                 IActionResult result = await controller.Delete(0);
 
-                BreedViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, $"The Breed ID must be between 1 and {int.MaxValue}.");
+                CheckMessage(result, $"The Breed ID must be between 1 and {int.MaxValue}.");
             }
         }
 
@@ -431,17 +596,16 @@ namespace DogBreeds.Test
         {
             using (var database = new TestDb())
             {
-
                 var controller = new BreedsController(database.Context);
 
                 IActionResult result = await controller.Delete(-1);
 
-                BreedViewModel viewModel = CheckViewModel(result);
-
-                CheckMessage(viewModel, $"The Breed ID must be between 1 and {int.MaxValue}.");
+                CheckMessage(result, $"The Breed ID must be between 1 and {int.MaxValue}.");
             }
         }
+        #endregion
 
+        #region Post 
         [Fact]
         public async void PostDeleteConfirmNotFound()
         {
@@ -475,22 +639,42 @@ namespace DogBreeds.Test
         }
 
         [Fact]
+        public async void PostDeleteConfirmNegativeId()
+        {
+            using (var database = new TestDb())
+            {
+
+                var controller = new BreedsController(database.Context);
+
+                IActionResult result = await controller.DeleteConfirmed(-1);
+
+                RedirectToActionResult redirect = Assert.IsType<RedirectToActionResult>(result);
+
+                Assert.Equal("Index", redirect.ActionName);
+            }
+        }
+
+        [Fact]
         public async void PostDeleteConfirmSuccess()
         {
             using (var database = new TestDb())
             {
-                Assert.True(database.Context.Individuals.Any(i => i.Id == 6));
+                Assert.True(database.Context.Breeds.Any(i => i.Id == 9));
+                Assert.False(database.Context.Breeds.Any(b => b.BreedId == 9));
+                Assert.False(database.Context.Individuals.Any(b => b.BreedId == 9));
 
                 var controller = new BreedsController(database.Context);
 
-                IActionResult result = await controller.DeleteConfirmed(3);
+                IActionResult result = await controller.DeleteConfirmed(9);
 
                 RedirectToActionResult redirect = Assert.IsType<RedirectToActionResult>(result);
 
                 Assert.Equal("Index", redirect.ActionName);
 
-                Assert.False(database.Context.Breeds.Any(i => i.Id == 3));
+                Assert.False(database.Context.Breeds.Any(i => i.Id == 9));
             }
         }
+        #endregion
+        #endregion
     }
 }
