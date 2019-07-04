@@ -21,8 +21,31 @@ namespace DogBreeds.Mvc.Dal.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
+        [Display(Name = "Name")]
         [Required(ErrorMessage = "You must enter a name for this Breed.")]
         [StringLength(255, MinimumLength = 1, ErrorMessage = "You must enter a name for this Breed.")]
         public string Name { get; set; }
+
+        public ICollection<Individual> Individuals { get; set; }
+
+        public ICollection<Breed> Breeds { get; set; }
+
+        [NotMapped]
+        public string FullName => GetFullName();
+
+        [Display(Name = "Breed")]
+        public int? BreedId { get; set; }
+
+        public Breed ParentBreed { get; set; }
+
+        private string GetFullName()
+        {
+            if (ParentBreed is null)
+            {
+                return Name;
+            }
+
+            return $"{Name} {ParentBreed.Name}";
+        }
     }
 }
