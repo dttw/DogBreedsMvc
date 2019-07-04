@@ -33,9 +33,10 @@ namespace DogBreeds.Mvc.Dal.Models
         [NotMapped]
         public string FullName => GetFullName();
 
-        [Display(Name = "Breed")]
+        [Display(Name = "Type of Breed")]
         public int? BreedId { get; set; }
 
+        [Display(Name = "Type of Breed")]
         public Breed ParentBreed { get; set; }
 
         private string GetFullName()
