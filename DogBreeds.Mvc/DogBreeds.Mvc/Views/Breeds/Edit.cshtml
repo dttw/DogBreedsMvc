@@ -1,4 +1,4 @@
-﻿@model DogBreeds.Mvc.Dal.Models.Breed
+﻿@model DogBreeds.Mvc.Models.BreedViewModel
 
 @{
     ViewData["Title"] = "Edit";
@@ -8,15 +8,23 @@
 
 <h4>Breed</h4>
 <hr />
+@Html.Partial("_Messages", Model.Messages)
+
 <div class="row">
     <div class="col-md-4">
         <form asp-action="Edit">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="Breed.Id" />
             <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
+                <label asp-for="Breed.Name" class="control-label"></label>
+                <input asp-for="Breed.Name" class="form-control" />
+                <span asp-validation-for="Breed.Name" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Breed.BreedId" class="control-label"></label>
+                <select asp-for="Breed.BreedId" asp-items="@(new SelectList(Model.Breeds,"Id","FullName"))">
+                    <option>Please Select a Breed</option>
+                </select>
             </div>
             <div class="form-group">
                 <input type="submit" value="Save" class="btn btn-default" />
@@ -28,6 +36,8 @@
 <div>
     <a asp-action="Index">Back to List</a>
 </div>
+
+@Html.Partial("_BreedChildren", Model)
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}

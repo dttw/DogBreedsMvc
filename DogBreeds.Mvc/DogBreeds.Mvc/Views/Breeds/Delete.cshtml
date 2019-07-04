@@ -1,4 +1,4 @@
-﻿@model DogBreeds.Mvc.Dal.Models.Breed
+﻿@model DogBreeds.Mvc.Models.BreedViewModel
 
 @{
     ViewData["Title"] = "Delete";
@@ -10,18 +10,32 @@
 <div>
     <h4>Breed</h4>
     <hr />
+    @Html.Partial("_Messages", Model.Messages)
     <dl class="dl-horizontal">
         <dt>
-            @Html.DisplayNameFor(model => model.Name)
+            @Html.DisplayNameFor(model => model.Breed.Name)
         </dt>
         <dd>
-            @Html.DisplayFor(model => model.Name)
+            @Html.DisplayFor(model => model.Breed.Name)
         </dd>
     </dl>
-    
+
     <form asp-action="Delete">
-        <input type="hidden" asp-for="Id" />
-        <input type="submit" value="Delete" class="btn btn-default" /> |
-        <a asp-action="Index">Back to List</a>
+
+        @if (Model.Individuals.Count() >= 1 || Model.Breeds.Count() >= 1)
+        {
+            <p>You cannot delete a breed which has Individuals or Breeds associated with it.</p>
+        }
+        else
+        {
+            <input type="hidden" asp-for="Breed.Id" />
+            <input type="submit" value="Delete" class="btn btn-default" />
+        }
+
+        | <a asp-action="Index">Back to List</a>
+
     </form>
+
+    @Html.Partial("_BreedChildren", Model)
+
 </div>
