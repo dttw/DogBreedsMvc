@@ -11,33 +11,13 @@ namespace DogBreeds.Mvc.Models
     {
         public IndividualViewModel() { }
 
-        public IndividualViewModel(Individual individual)
-            : this(individual.Id, individual.Name, individual.BreedId)
-        {
-        }
+        public IndividualViewModel(Individual individual) => Individual = individual;
 
-        public IndividualViewModel(string name, int breedId)
-        {
-            Name = name;
-            BreedId = breedId;
-        }
+        public IndividualViewModel(string name, int breedId) => Individual = new Individual(name, breedId);
 
-        public IndividualViewModel(int id, string name, int breedId)
-        {
-            Id = id;
-            Name = name;
-            BreedId = breedId;
-        }
+        public IndividualViewModel(int id, string name, int breedId) => Individual = new Individual(id, name, breedId);
 
-        public int Id { get; set; }
-
-        [Required(ErrorMessage = "You must enter a name for this Breed.")]
-        [StringLength(255, MinimumLength = 1, ErrorMessage = "You must enter a name for this Individual.")]
-        public string Name { get; set; }
-
-        [Display(Name = "Breed")]
-        [Required(ErrorMessage = "You must select a Breed for this Individual.")]
-        public int BreedId { get; set; }
+        public Individual Individual { get; private set; } = new Individual();
 
         public IEnumerable<Breed> Breeds { get; set; } = new List<Breed>();
 
