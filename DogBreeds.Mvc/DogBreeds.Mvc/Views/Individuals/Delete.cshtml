@@ -1,4 +1,4 @@
-﻿@model DogBreeds.Mvc.Dal.Models.Individual
+﻿@model DogBreeds.Mvc.Models.IndividualViewModel
 
 @{
     ViewData["Title"] = "Delete";
@@ -10,23 +10,24 @@
 <div>
     <h4>Individual</h4>
     <hr />
+    @Html.Partial("_Messages", Model.Messages)
     <dl class="dl-horizontal">
         <dt>
-            @Html.DisplayNameFor(model => model.Name)
+            @Html.DisplayNameFor(model => model.Individual.Name)
         </dt>
         <dd>
-            @Html.DisplayFor(model => model.Name)
+            @Html.DisplayFor(model => model.Individual.Name)
         </dd>
         <dt>
-            @Html.DisplayNameFor(model => model.Breed)
+            @Html.DisplayNameFor(model => model.Individual.Breed)
         </dt>
         <dd>
-            @Html.DisplayFor(model => model.Breed.Name)
+            @Html.DisplayFor(model => model.Individual.Breed.Name)
         </dd>
     </dl>
-    
+
     <form asp-action="Delete">
-        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="Individual.Id" />
         <input type="submit" value="Delete" class="btn btn-default" /> |
         <a asp-action="Index">Back to List</a>
     </form>

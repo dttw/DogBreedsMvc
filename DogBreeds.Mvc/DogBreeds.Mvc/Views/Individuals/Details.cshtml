@@ -1,4 +1,4 @@
-﻿@model DogBreeds.Mvc.Dal.Models.Individual
+﻿@model DogBreeds.Mvc.Models.IndividualViewModel
 
 @{
     ViewData["Title"] = "Details";
@@ -9,22 +9,23 @@
 <div>
     <h4>Individual</h4>
     <hr />
+    @Html.Partial("_Messages", Model.Messages)
     <dl class="dl-horizontal">
         <dt>
-            @Html.DisplayNameFor(model => model.Name)
+            @Html.DisplayNameFor(model => model.Individual.Name)
         </dt>
         <dd>
-            @Html.DisplayFor(model => model.Name)
+            @Html.DisplayFor(model => model.Individual.Name)
         </dd>
         <dt>
-            @Html.DisplayNameFor(model => model.Breed)
+            @Html.DisplayNameFor(model => model.Individual.Breed)
         </dt>
         <dd>
-            @Html.DisplayFor(model => model.Breed.Name)
+            @Html.DisplayFor(model => model.Individual.Breed.Name)
         </dd>
     </dl>
 </div>
 <div>
-    <a asp-action="Edit" asp-route-id="@Model.Id">Edit</a> |
+    <a asp-action="Edit" asp-route-id="@Model.Individual.Id">Edit</a> |
     <a asp-action="Index">Back to List</a>
 </div>

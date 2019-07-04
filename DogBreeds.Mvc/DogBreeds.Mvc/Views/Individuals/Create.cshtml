@@ -1,26 +1,30 @@
-﻿@model DogBreeds.Mvc.Dal.Models.Individual
+﻿@model DogBreeds.Mvc.Models.IndividualViewModel
 
 @{
     ViewData["Title"] = "Create";
 }
 
 <h2>Create</h2>
-
 <h4>Individual</h4>
+
+@Html.Partial("_Messages", Model.Messages)
 <hr />
 <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-6">
         <form asp-action="Create">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
+                <label asp-for="Individual.Name" class="control-label"></label>
+                <input asp-for="Individual.Name" class="form-control" />
+                <span asp-validation-for="Individual.Name" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="BreedId" class="control-label"></label>
-                <select asp-for="BreedId" class ="form-control" asp-items="ViewBag.BreedId"></select>
-            </div>
+                <label asp-for="Individual.BreedId" class="control-label"></label>
+                <select asp-for="Individual.BreedId" asp-items="@(new SelectList(Model.Breeds,"Id","FullName"))">
+                    <option>Please Select a Breed</option>
+                </select>
+                <span asp-validation-for="Individual.BreedId" class="text-danger"></span>
+            </div>            
             <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-default" />
             </div>
