@@ -22,7 +22,7 @@
 
     <form asp-action="Delete">
 
-        @if (Model.Individuals.Count() >= 1 || Model.Breeds.Count() >= 1)
+        @if (Model.Individuals.Count() >= 1 || Model.ChildBreeds.Count() >= 1)
         {
             <p>You cannot delete a breed which has Individuals or Breeds associated with it.</p>
         }

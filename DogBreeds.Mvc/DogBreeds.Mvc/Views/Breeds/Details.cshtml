@@ -17,6 +17,12 @@
         <dd>
             @Html.DisplayFor(model => model.Breed.Name)
         </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.Breed.ParentBreed)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.Breed.ParentBreed.Name)
+        </dd>
     </dl>
 </div>
 <div>
