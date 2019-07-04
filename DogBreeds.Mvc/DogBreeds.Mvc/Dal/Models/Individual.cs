@@ -28,13 +28,16 @@ namespace DogBreeds.Mvc.Dal.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "You must enter a name for this Breed.")]
+        [Display(Name = "Name")]
+        [Required(ErrorMessage = "You must enter a name for this Individual.")]
         [StringLength(255, MinimumLength = 1, ErrorMessage = "You must enter a name for this Individual.")]
         public string Name { get; set; }
 
+        [Display(Name = "Breed")]
         [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "You must select a Breed for this Individual.")]
         public int BreedId { get; set; }
 
-        public Breed Breed { get; set; }
+        public Breed Breed { get; set; } = new Breed();
     }
 }
