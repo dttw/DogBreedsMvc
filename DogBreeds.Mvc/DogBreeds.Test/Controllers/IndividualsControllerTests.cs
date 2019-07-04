@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
-namespace DogIndividuals.Test
+namespace DogBreeds.Test.Controllers
 {
     [Collection("Sequential")]
     public class IndividualControllerTests

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
-namespace DogBreeds.Test
+namespace DogBreeds.Test.Controllers
 {
     [Collection("Sequential")]
     public class BreedControllerTests
@@ -174,7 +174,7 @@ namespace DogBreeds.Test
 
                 Assert.Equal("Index", redirect.ActionName);
 
-                Breed breed = database.Context.Breeds.LastOrDefault();
+                Breed breed = database.Context.Breeds.SingleOrDefault(b => b.Name == "Test Breed with Parent Breed");
 
                 Assert.Equal("Test Breed with Parent Breed", breed.Name);
                 Assert.Equal(1, breed.ParentBreed.Id);
@@ -406,13 +406,13 @@ namespace DogBreeds.Test
             {
                 var controller = new BreedsController(database.Context);
 
-                IActionResult result = await controller.Edit(1, new Breed { Id = 1, Name = "Test Breed with Zero Parent Breed", BreedId = 0 });
+                IActionResult result = await controller.Edit(1, new Breed { Id = 1, Name = "Test Modified Breed with Zero Parent Breed", BreedId = 0 });
 
                 RedirectToActionResult redirect = Assert.IsType<RedirectToActionResult>(result);
 
                 Assert.Equal("Index", redirect.ActionName);
 
-                Breed breed = database.Context.Breeds.SingleOrDefault(b => b.Name == "Test Breed with Zero Parent Breed");
+                Breed breed = database.Context.Breeds.SingleOrDefault(b => b.Name == "Test Modified Breed with Zero Parent Breed");
 
                 Assert.Equal(1, breed.Id);
             }
@@ -453,15 +453,15 @@ namespace DogBreeds.Test
             {
                 var controller = new BreedsController(database.Context);
 
-                IActionResult result = await controller.Edit(1, new Breed { Id = 1, Name = "Test Breed with Parent Breed", BreedId = 2 });
+                IActionResult result = await controller.Edit(7, new Breed { Id = 7, Name = "Test Modified Breed with Parent Breed", BreedId = 2 });
 
                 RedirectToActionResult redirect = Assert.IsType<RedirectToActionResult>(result);
 
                 Assert.Equal("Index", redirect.ActionName);
 
-                Breed breed = database.Context.Breeds.SingleOrDefault(b => b.Name == "Test Breed with Parent Breed");
+                Breed breed = database.Context.Breeds.SingleOrDefault(b => b.Name == "Test Modified Breed with Parent Breed");
 
-                Assert.Equal(1, breed.Id);
+                Assert.Equal(7, breed.Id);
                 Assert.Equal(2, breed.BreedId);
             }
         }
