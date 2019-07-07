@@ -4,7 +4,7 @@ MVC Website to manage dog breeds
 # Prerequisites
 
 - Visual Studio version 2017. 
-- .NET Core 2.2 SDK
+- .NET Core 2.1 SDK
 - SQL Server Express
 
 # Running the Application
