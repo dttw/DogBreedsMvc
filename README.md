@@ -16,6 +16,7 @@ MVC Website to manage dog breeds
     - Open the Package Manager Console (Tools > NuGet Package Manager > Package Manager Console)
     - Run the command EntityFrameworkCore\Update-Database
 - Run the application using IIS Express as the hosting platform
+- The database is populated with initial breeds from the json file stored as an embedded resource in the application
 - You will be present with the home page of the application
 
 ## Remotely
