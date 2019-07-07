@@ -123,8 +123,8 @@ namespace DogBreeds.Mvc.Controllers
                 return CreateViewModel($"The Breed ID must be between 1 and {int.MaxValue}.");
             }
 
-            Breed breed = await context.Breeds.SingleOrDefaultAsync(m => m.Id == id);
-
+            Breed breed = await context.Breeds.Include(i => i.ParentBreed).SingleOrDefaultAsync(m => m.Id == id);
+            
             if (breed == null)
             {
                 return CreateViewModel("The selected Breed could not be found.");
