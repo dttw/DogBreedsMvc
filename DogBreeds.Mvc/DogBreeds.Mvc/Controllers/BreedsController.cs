@@ -29,23 +29,11 @@ namespace DogBreeds.Mvc.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Name,BreedId")] Breed breed)
         {
-            string validationMessage = ValidateBreed(breed);
+            string validationMessage = ValidateSave(breed);
 
             if (!string.IsNullOrEmpty(validationMessage))
             {
                 return View(CreateViewModel(validationMessage, breed));
-            }
-
-            if (breed.BreedId > 0)
-            {
-                Breed parentBreed = context.Breeds.SingleOrDefault(b => b.Id == breed.BreedId);
-
-                if (parentBreed is null)
-                {
-                    return View(CreateViewModel("The parent Breed selected could not be found.", breed));
-                }
-
-                breed.ParentBreed = parentBreed;
             }
 
             context.Add(breed);
@@ -60,25 +48,13 @@ namespace DogBreeds.Mvc.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Name,BreedId")] Breed breed)
         {
-            string validationMessage = ValidateBreed(id, breed);
+            string validationMessage = ValidateEdit(id, breed);
 
             if (!string.IsNullOrEmpty(validationMessage))
             {
                 return View(CreateViewModel(validationMessage, breed));
             }
 
-            if (breed.BreedId > 0)
-            {
-                Breed parentBreed = context.Breeds.SingleOrDefault(b => b.Id == breed.BreedId);
-
-                if (parentBreed is null)
-                {
-                    return View(CreateViewModel("The parent Breed selected could not be found.", breed));
-                }
-
-                breed.ParentBreed = parentBreed;
-            }
-          
             try
             {
                 Breed existingBreed = context.Breeds.Single(b => b.Id == id);
@@ -180,7 +156,7 @@ namespace DogBreeds.Mvc.Controllers
             return viewModel;
         }
 
-        private string ValidateBreed(Breed breed)
+        private string ValidateSave(Breed breed)
         {
             if (string.IsNullOrEmpty(breed.Name))
             {
@@ -190,12 +166,29 @@ namespace DogBreeds.Mvc.Controllers
             if (breed.BreedId < 0 || breed.BreedId > int.MaxValue)
             {
                 return $"The Parent Breed ID cannot be negative or greater than {int.MaxValue}.";
+            }     
+
+            return ValidateParent(breed);
+        }
+
+        private string ValidateParent(Breed breed)
+        {
+            if (breed.BreedId > 0)
+            {
+                Breed parentBreed = context.Breeds.SingleOrDefault(b => b.Id == breed.BreedId);
+
+                if (parentBreed is null)
+                {
+                    return "The parent Breed selected could not be found.";
+                }
+
+                breed.ParentBreed = parentBreed;
             }
 
             return string.Empty;
         }
 
-        private string ValidateBreed(int id, Breed breed)
+        private string ValidateEdit(int id, Breed breed)
         {
             if (id != breed.Id)
             {
@@ -217,7 +210,7 @@ namespace DogBreeds.Mvc.Controllers
                 return "A breed cannot be set as it's own Parent Breed.";
             }
 
-            return ValidateBreed(breed);
+            return ValidateSave(breed);
         }
     }
 }
