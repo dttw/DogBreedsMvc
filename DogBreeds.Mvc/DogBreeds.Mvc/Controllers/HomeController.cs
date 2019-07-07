@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using DogBreeds.Mvc.Models;
 using Microsoft.AspNetCore.Mvc;
-using DogBreeds.Mvc.Models;
+using System.Diagnostics;
 
 namespace DogBreeds.Mvc.Controllers
 {

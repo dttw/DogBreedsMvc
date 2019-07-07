@@ -1,7 +1,6 @@
 using DogBreeds.Mvc.Controllers;
 using DogBreeds.Mvc.Dal.Models;
 using DogBreeds.Mvc.Models;
-using DogBreeds.Test;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;

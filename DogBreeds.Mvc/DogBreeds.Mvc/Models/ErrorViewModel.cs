@@ -1,5 +1,3 @@
-using System;
-
 namespace DogBreeds.Mvc.Models
 {
     public class ErrorViewModel
