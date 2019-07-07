@@ -32,7 +32,6 @@ namespace DogBreeds.Test.Controllers
         {
             using (var database = new TestDb())
             {
-
                 var controller = new BreedsController(database.Context);
 
                 IActionResult result = await controller.Index();
